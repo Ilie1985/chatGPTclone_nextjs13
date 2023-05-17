@@ -14,15 +14,34 @@ export default function Home() {
   }
 
   return (
-    <div>
+    <>
       <Head>
-        <title>Next JS ChatGPT Starter</title>
+        <title>Chatty Pete -Login or Signup</title>
       </Head>
-      <h1>Welcome to the Next JS &amp; ChatGPT Starter</h1>
-      <div className="">
-        {user && <Link href="/api/auth/logout">Logout</Link>}
-        {!user && <Link href="/api/auth/login">Login</Link>}
+
+      <div className=" flex min-h-screen w-full items-center justify-center bg-gray-800 text-white">
+        <div className="flex space-x-2">
+          {user && <Link href="/api/auth/logout">Logout</Link>}
+          <>
+            {!user && (
+              <Link
+                href="/api/auth/login"
+                className="rounded-md bg-emerald-500 px-4 py-2 text-white hover:bg-emerald-600 "
+              >
+                Login
+              </Link>
+            )}
+            {!user && (
+              <Link
+                href="/api/auth/signup"
+                className="rounded-md bg-emerald-500 px-4 py-2 text-white hover:bg-emerald-600 "
+              >
+                Signup
+              </Link>
+            )}
+          </>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
