@@ -10,9 +10,11 @@ export default function ChatPage() {
   const [incomingMessage, setIncomingMessage] = useState("");
   const [messageText, setMessageText] = useState("");
   const [newChatMessages, setNewChatMessages] = useState([]);
+  const [generatingResponse, setGeneratingResponse] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setGeneratingResponse(true);
     setNewChatMessages((prev) => {
       const newChatMessages = [
         ...prev,
@@ -22,9 +24,10 @@ export default function ChatPage() {
           content: messageText,
         },
       ];
-      return newChatMessages
+      return newChatMessages;
     });
-    console.log("MESSAGE TEXT", messageText);
+    setMessageText("");
+
     const response = await fetch(`/api/chat/sendMessage`, {
       method: "POST",
       headers: {
@@ -43,7 +46,7 @@ export default function ChatPage() {
       console.log("MESSAGE", message);
       setIncomingMessage((s) => `${s}${message.content}`);
     });
-    setMessageText("");
+    setGeneratingResponse(false);
   };
 
   return (
@@ -71,10 +74,10 @@ export default function ChatPage() {
           </div>
           <footer className="bg-gray-800 p-10">
             <form onSubmit={handleSubmit}>
-              <fieldset className="flex gap-2">
+              <fieldset className="flex gap-2" disabled={generatingResponse}>
                 <textarea
                   className="w-full resize-none rounded-md bg-gray-700 p-2 text-white focus:border-emerald-500 focus:bg-gray-600 focus:outline focus:outline-emerald-500 "
-                  placeholder="Send a message..."
+                  placeholder={generatingResponse ? "" : "Send a message..."}
                   value={messageText}
                   onChange={(e) => {
                     setMessageText(e.target.value);
