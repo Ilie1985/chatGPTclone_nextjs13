@@ -42,7 +42,13 @@ const ChatSidebar = ({ chatId }) => {
                 chatId === chat._id ? "bg-gray-700 hover:bg-gray-700" : ""
               }`}
             >
-              <FontAwesomeIcon icon={faMessage} /> {chat.title}
+              <FontAwesomeIcon icon={faMessage} />{" "}
+              <span
+                title={chat.title}
+                className="whitespace-none overflow-hidden text-ellipsis"
+              >
+                {chat.title}
+              </span>
             </Link>
           );
         })}
