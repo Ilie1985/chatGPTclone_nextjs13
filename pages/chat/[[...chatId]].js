@@ -1,16 +1,25 @@
 import ChatSidebar from "components/chatSidebar/ChatSidebar";
 import Head from "next/head";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { streamReader } from "openai-edge-stream";
 import { v4 as uuid } from "uuid";
-// import { Message } from "components/Message";
 import Message from "components/Message/Message";
+import { useRouter } from "next/router";
 
-export default function ChatPage() {
+export default function ChatPage({ chatId }) {
+  const [newChatId, setNewChatId] = useState(null);
   const [incomingMessage, setIncomingMessage] = useState("");
   const [messageText, setMessageText] = useState("");
   const [newChatMessages, setNewChatMessages] = useState([]);
   const [generatingResponse, setGeneratingResponse] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!generatingResponse && newChatId) {
+      setNewChatId(null);
+      router.push(`/chat/${newChatId}`);
+    }
+  }, [newChatId, generatingResponse, router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,36 +37,29 @@ export default function ChatPage() {
     });
     setMessageText("");
 
-    const response = await fetch(`/api/chat/createNewChat`, {
+    const response = await fetch(`/api/chat/sendMessage`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify({
-        message: messageText,
-      }),
+      body: JSON.stringify({ message: messageText }),
     });
-    const json = await response.json();
-    console.log("NEW CHAT", json);
+    const data = response.body;
 
-    // const response = await fetch(`/api/chat/sendMessage`, {
-    //   method: "POST",
-    //   headers: {
-    //     "content-type": "application/json",
-    //   },
-    //   body: JSON.stringify({ message: messageText }),
-    // });
-    // const data = response.body;
+    if (!data) {
+      return;
+    }
 
-    // if (!data) {
-    //   return;
-    // }
+    const reader = data.getReader();
+    await streamReader(reader, (message) => {
+      console.log("MESSAGE", message);
 
-    // const reader = data.getReader();
-    // await streamReader(reader, (message) => {
-    //   console.log("MESSAGE", message);
-    //   setIncomingMessage((s) => `${s}${message.content}`);
-    // });
+      if (message.event === "newChatId") {
+        setNewChatId(message.content);
+      } else {
+        setIncomingMessage((s) => `${s}${message.content}`);
+      }
+    });
 
     setGeneratingResponse(false);
   };
@@ -68,7 +70,7 @@ export default function ChatPage() {
         <title>New chat</title>
       </Head>
       <div className="grid h-screen grid-cols-[260px_1fr]">
-        <ChatSidebar />
+        <ChatSidebar chatId={chatId} />
         <div className="flex flex-col overflow-hidden bg-gray-700">
           <div className="flex-1 overflow-scroll text-white">
             {newChatMessages.map((message) => {
@@ -107,3 +109,12 @@ export default function ChatPage() {
     </>
   );
 }
+
+export const getServerSideProps = async (ctx) => {
+  const chatId = ctx.params?.chatId?.[0] || null;
+  return {
+    props: {
+      chatId,
+    },
+  };
+};
