@@ -17,7 +17,10 @@ export default function ChatPage({ chatId, title, messages = [] }) {
   const [newChatMessages, setNewChatMessages] = useState([]);
   const [generatingResponse, setGeneratingResponse] = useState(false);
   const [fullMessage, setFullMessage] = useState("");
+  const [originalChatId, setOriginalChatId] = useState(chatId);
   const router = useRouter();
+
+  const routeHasChanged = chatId !== originalChatId;
 
   //when the route changes
   useEffect(() => {
@@ -25,23 +28,21 @@ export default function ChatPage({ chatId, title, messages = [] }) {
     setNewChatId(null);
   }, [chatId]);
 
-  
-  
   //save the newly streamed message to new chat measages
   useEffect(() => {
-    if(!generatingResponse && fullMessage){
-      setNewChatMessages(prev=>[...prev,{
-        _id:uuid(),
-        role:"assistant",
-        content:fullMessage
-      }])
-      setFullMessage("")
+    if (!routeHasChanged && !generatingResponse && fullMessage) {
+      setNewChatMessages((prev) => [
+        ...prev,
+        {
+          _id: uuid(),
+          role: "assistant",
+          content: fullMessage,
+        },
+      ]);
+      setFullMessage("");
     }
-  }, [generatingResponse,fullMessage]);
+  }, [generatingResponse, fullMessage, routeHasChanged]);
 
-  
-  
-  
   //if a new chat is created
   useEffect(() => {
     if (!generatingResponse && newChatId) {
@@ -53,6 +54,7 @@ export default function ChatPage({ chatId, title, messages = [] }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setGeneratingResponse(true);
+    setOriginalChatId(chatId);
     setNewChatMessages((prev) => {
       const newChatMessages = [
         ...prev,
@@ -119,8 +121,15 @@ export default function ChatPage({ chatId, title, messages = [] }) {
               );
             })}
 
-            {incomingMessage && (
+            {incomingMessage && !routeHasChanged && (
               <Message role="assistant" content={incomingMessage} />
+            )}
+
+            {incomingMessage && routeHasChanged && (
+              <Message
+                role="notice"
+                content="Only one message at a time.Please allow any other responses to complete before sending another message"
+              />
             )}
           </div>
           <footer className="bg-gray-800 p-10">
