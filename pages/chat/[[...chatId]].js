@@ -16,13 +16,33 @@ export default function ChatPage({ chatId, title, messages = [] }) {
   const [messageText, setMessageText] = useState("");
   const [newChatMessages, setNewChatMessages] = useState([]);
   const [generatingResponse, setGeneratingResponse] = useState(false);
+  const [fullMessage, setFullMessage] = useState("");
   const router = useRouter();
 
+  //when the route changes
   useEffect(() => {
     setNewChatMessages([]);
     setNewChatId(null);
   }, [chatId]);
 
+  
+  
+  //save the newly streamed message to new chat measages
+  useEffect(() => {
+    if(!generatingResponse && fullMessage){
+      setNewChatMessages(prev=>[...prev,{
+        _id:uuid(),
+        role:"assistant",
+        content:fullMessage
+      }])
+      setFullMessage("")
+    }
+  }, [generatingResponse,fullMessage]);
+
+  
+  
+  
+  //if a new chat is created
   useEffect(() => {
     if (!generatingResponse && newChatId) {
       setNewChatId(null);
@@ -51,7 +71,7 @@ export default function ChatPage({ chatId, title, messages = [] }) {
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify({ message: messageText }),
+      body: JSON.stringify({ chatId, message: messageText }),
     });
     const data = response.body;
 
@@ -60,6 +80,7 @@ export default function ChatPage({ chatId, title, messages = [] }) {
     }
 
     const reader = data.getReader();
+    let content = "";
     await streamReader(reader, (message) => {
       console.log("MESSAGE", message);
 
@@ -67,9 +88,11 @@ export default function ChatPage({ chatId, title, messages = [] }) {
         setNewChatId(message.content);
       } else {
         setIncomingMessage((s) => `${s}${message.content}`);
+        content = content + message.content;
       }
     });
 
+    setFullMessage(content);
     setIncomingMessage("");
 
     setGeneratingResponse(false);
